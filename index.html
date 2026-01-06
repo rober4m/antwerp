@@ -29,11 +29,9 @@
     });
 
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    
+
     map.on('load', () => {
 
-       // --- Your buildings (from bld_v10.geojson) ---
-      // IMPORTANT: bld_v10.geojson must be EPSG:4326 and have property "height" in meters.
       map.addSource('bld-v10', {
         type: 'geojson',
         data: 'bld_antwerp.geojson'
@@ -75,31 +73,7 @@
     });
 
       map.moveLayer('wind-layer', 'bld-v10-3d');
-   // map.moveLayer('wind-layer', 'bld-v10-3d');
-      // OPTIONAL: turn off Mapbox's default 3D buildings if you only want your own
-      // (If you keep both, you might see double buildings where datasets overlap.)
-      // Comment OUT the whole block below to disable Mapbox default buildings.
-      /*
-      map.addLayer(
-        {
-          id: '3d-buildings',
-          source: 'composite',
-          'source-layer': 'building',
-          filter: ['==', 'extrude', 'true'],
-          type: 'fill-extrusion',
-          minzoom: 14,
-          paint: {
-            'fill-extrusion-color': '#aaa',
-            'fill-extrusion-height': ['get', 'height'],
-            'fill-extrusion-base': ['get', 'min_height'],
-            'fill-extrusion-opacity': 0.35
-          }
-        },
-        'waterway-label'
-      );
-      */
-      // Prepared by Rober Mamani ;) No me olvides 
-      // OPTIONAL: Debug click to inspect building properties (verify "height" exists)
+
       map.on('click', 'bld-v10-3d', (e) => {
         console.log('Building properties:', e.features[0].properties);
       });
