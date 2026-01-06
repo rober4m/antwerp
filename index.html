@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Antwerp 3D buildings</title>
+
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { width: 100vw; height: 100vh; }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <script>
+    mapboxgl.accessToken =
+      'pk.eyJ1Ijoicm9iZXJtIiwiYSI6ImNtaHNiNzdvaTB0ancyanIxYXRxdzM2ODUifQ.r9Q7oTBpFo_Woqh2i0Vm5g';
+
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/outdoors-v12',
+      center: [4.4025, 51.2194],
+      zoom: 13,
+      pitch: 60,
+      bearing: -5
+    });
+
+    map.on('load', () => {
+
+       // --- Your buildings (from bld_v10.geojson) ---
+      // IMPORTANT: bld_v10.geojson must be EPSG:4326 and have property "height" in meters.
+      map.addSource('bld-v10', {
+        type: 'geojson',
+        data: 'bld_v10_4326.geojson'
+      });
+
+      // Extrude using the feature property "height"
+      map.addLayer({
+        id: 'bld-v10-3d',
+        type: 'fill-extrusion',
+        source: 'bld-v10',
+        paint: {
+          'fill-extrusion-color': '#999999',
+          'fill-extrusion-height': [
+            'coalesce',
+            ['to-number', ['get', 'height']],  // read height property
+            0
+          ],
+          'fill-extrusion-base': 0,
+          'fill-extrusion-opacity': 0.75
+        }
+      });
+
+      map.addSource('wind-img', {
+      type: 'image',
+      url: 'map_windcomfort_web.png',
+      coordinates: [
+        [4.354281665, 51.263371520],  // top-left
+        [4.485654003, 51.263371520],  // top-right
+        [4.485654003, 51.166687855],  // bottom-right
+        [4.354281665, 51.166687855]   // bottom-left
+      ]
+    });
+
+      map.addLayer({
+      id: 'wind-layer',
+      type: 'raster',
+      source: 'wind-img',
+      paint: { 'raster-opacity': 0.75 }
+    });
+
+      map.moveLayer('wind-layer', 'bld-v10-3d');
+   // map.moveLayer('wind-layer', 'bld-v10-3d');
+      // OPTIONAL: turn off Mapbox's default 3D buildings if you only want your own
+      // (If you keep both, you might see double buildings where datasets overlap.)
+      // Comment OUT the whole block below to disable Mapbox default buildings.
+      /*
+      map.addLayer(
+        {
+          id: '3d-buildings',
+          source: 'composite',
+          'source-layer': 'building',
+          filter: ['==', 'extrude', 'true'],
+          type: 'fill-extrusion',
+          minzoom: 14,
+          paint: {
+            'fill-extrusion-color': '#aaa',
+            'fill-extrusion-height': ['get', 'height'],
+            'fill-extrusion-base': ['get', 'min_height'],
+            'fill-extrusion-opacity': 0.35
+          }
+        },
+        'waterway-label'
+      );
+      */
+      // Prepared by Rober Mamani ;) No me olvides 
+      // OPTIONAL: Debug click to inspect building properties (verify "height" exists)
+      map.on('click', 'bld-v10-3d', (e) => {
+        console.log('Building properties:', e.features[0].properties);
+      });
+    });
+  </script>
+</body>
+</html>
