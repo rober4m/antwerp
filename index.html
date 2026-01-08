@@ -2,24 +2,39 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>Antwerp 3D buildings</title>
+  <title>Wind in Antwerp 3D </title>
 
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
   <style>
     body { margin: 0; padding: 0; }
     #map { width: 100vw; height: 100vh; }
 
-    #legend {
-  position: absolute;   /* THIS makes it overlap */
-  bottom: 30px;
-  left: 10px;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-family: Arial, sans-serif;
-  z-index: 10;          /* THIS ensures it is above the map */
-  box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+    /* Dataset selector box */
+    #layer-switch {
+      position: absolute;co
+      top: 20px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-family: Arial, sans-serif;
+      z-index: 20;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.3);
     }
+
+    /* Legend box */
+    #legend {
+      position: absolute;
+      bottom: 30px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-family: Arial, sans-serif;
+      z-index: 10;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+    }
+
     #legend h4 {
       margin: 0 0 8px 0;
       font-size: 14px;
@@ -29,11 +44,22 @@
 
 <body>
 
-  <div id="legend">
-  <h4>Wind comfort</h4>
-  <img src="windcomfort_legend.PNG" style="width:300px; display:block;">
+  <!-- Dataset selector -->
+  <div id="layer-switch">
+    <label for="dataset"><b>Dataset:</b></label>
+    <select id="dataset">
+    <option value="comfort">Wind comfort</option>
+    <option value="speed" selected>Wind speed</option>
+    </select>
   </div>
 
+  <!-- Legend -->
+  <div id="legend">
+    <h4 id="legend-title">Wind speed</h4>
+    <img id="legend-img" src="windspeed_legend.PNG" style="width:400px; display:block;">
+  </div>
+
+  <!-- Map -->
   <div id="map"></div>
 
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
@@ -54,12 +80,12 @@
 
     map.on('load', () => {
 
+      /* ------------------ 3D BUILDINGS ------------------ */
       map.addSource('bld-v10', {
         type: 'geojson',
         data: 'bld_antwerp.geojson'
       });
 
-      // Extrude using the feature property "height"
       map.addLayer({
         id: 'bld-v10-3d',
         type: 'fill-extrusion',
@@ -68,7 +94,7 @@
           'fill-extrusion-color': '#999999',
           'fill-extrusion-height': [
             'coalesce',
-            ['to-number', ['get', 'height']],  // read height property
+            ['to-number', ['get', 'height']],
             0
           ],
           'fill-extrusion-base': 0,
@@ -76,29 +102,80 @@
         }
       });
 
-      map.addSource('wind-img', {
-      type: 'image',
-      url: 'map_windcomfort_web.png',
-      coordinates: [
-        [4.354281665, 51.263371520],  // top-left
-        [4.485654003, 51.263371520],  // top-right
-        [4.485654003, 51.166687855],  // bottom-right
-        [4.354281665, 51.166687855]   // bottom-left
-      ]
-    });
+      /* ------------------ WIND COMFORT OVERLAY ------------------ */
+      map.addSource('wind-comfort-img', {
+        type: 'image',
+        url: 'map_windcomfort_web.png',
+        coordinates: [
+          [4.354281665, 51.263371520],  // top-left
+          [4.485654003, 51.263371520],  // top-right
+          [4.485654003, 51.166687855],  // bottom-right
+          [4.354281665, 51.166687855]   // bottom-left
+        ]
+      });
+
+        map.addLayer({
+            id: 'wind-comfort-layer',
+            type: 'raster',
+            source: 'wind-comfort-img',
+            layout: { visibility: 'none' },  // start hidden
+            paint: { 'raster-opacity': 0.75 }
+        });
+
+      /* ------------------ WIND SPEED OVERLAY ------------------ */
+      map.addSource('wind-speed-img', {
+        type: 'image',
+        url: 'map_windspeed_web.png',
+        coordinates: [
+          [4.354281665, 51.263371520],  // top-left
+          [4.485654003, 51.263371520],  // top-right
+          [4.485654003, 51.166687855],  // bottom-right
+          [4.354281665, 51.166687855]   // bottom-left
+        ]
+      });
 
       map.addLayer({
-      id: 'wind-layer',
-      type: 'raster',
-      source: 'wind-img',
-      paint: { 'raster-opacity': 0.75 }
-    });
+        id: 'wind-speed-layer',
+        type: 'raster',
+        source: 'wind-speed-img',
+        layout: { visibility: 'visible' },  
+        paint: { 'raster-opacity': 0.75 }
+      });
 
-      map.moveLayer('wind-layer', 'bld-v10-3d');
+      /* Put wind overlays above the building extrusions */
+      map.moveLayer('wind-comfort-layer', 'bld-v10-3d');
+      map.moveLayer('wind-speed-layer', 'bld-v10-3d');
 
+      /* ------------------ SWITCHING LOGIC ------------------ */
+      const selector = document.getElementById("dataset");
+      const legendTitle = document.getElementById("legend-title");
+      const legendImg = document.getElementById("legend-img");
+
+      selector.addEventListener("change", (e) => {
+        const value = e.target.value;
+
+        if (value === "comfort") {
+          map.setLayoutProperty("wind-comfort-layer", "visibility", "visible");
+          map.setLayoutProperty("wind-speed-layer", "visibility", "none");
+
+          legendTitle.innerText = "Wind comfort";
+          legendImg.src = "windcomfort_legend.PNG";
+        }
+
+        if (value === "speed") {
+          map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
+          map.setLayoutProperty("wind-speed-layer", "visibility", "visible");
+
+          legendTitle.innerText = "Wind speed";
+          legendImg.src = "windspeed_legend.PNG";  // <-- update if needed
+        }
+      });
+
+      /* Debug click on buildings */
       map.on('click', 'bld-v10-3d', (e) => {
         console.log('Building properties:', e.features[0].properties);
       });
+
     });
   </script>
 </body>
