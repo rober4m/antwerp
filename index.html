@@ -51,13 +51,13 @@
   <div id="layer-switch">
     <label for="dataset"><b>Dataset:</b></label>
     <select id="dataset">
-    <option value="comfort">Wind Comfort</option>
+    <option value="speed" selected>Mean Wind Speed</option>
+    <option value="comfort">Wind Comfort Deurne</option>
+    <option value="comfort-stabroek">Wind Comfort Stabroek</option>
     <option value="hazard">Wind Hazard</option>
     <option value="storm">Wind Storm</option>
-    <option value="trees">Vegetation</option>
-    <option value="comfort-stabroek">Wind Comfort Stabroek</option>
     <option value="quality">Air quality</option>
-    <option value="speed" selected>Mean Wind Speed</option>
+    <option value="trees">Vegetation</option>
     </select>
   </div>
 
@@ -312,7 +312,7 @@
           map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
 
           legendTitle.innerText = "Vegetation";
-          legendImg.src = "trees_legend.png";
+          legendImg.src = "trees_legend_v1.png";
         }
         if (value === "quality") {
           map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
