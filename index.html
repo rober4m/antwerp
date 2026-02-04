@@ -52,8 +52,10 @@
     <label for="dataset"><b>Dataset:</b></label>
     <select id="dataset">
     <option value="comfort">Wind Comfort</option>
+    <option value="hazard">Wind Hazard</option>
     <option value="storm">Wind Storm</option>
     <option value="trees">Vegetation</option>
+    <option value="comfort-stabroek">Wind Comfort Stabroek</option>
     <option value="quality">Air quality</option>
     <option value="speed" selected>Mean Wind Speed</option>
     </select>
@@ -115,8 +117,8 @@
         coordinates: [
           [4.354281665, 51.263371520],  // top-left
           [4.485654003, 51.263371520],  // top-right
-          [4.485654003, 51.166687855],  // bottom-right
-          [4.354281665, 51.166687855]   // bottom-left
+          [4.485454003, 51.166687855],  // bottom-right
+          [4.354281665, 51.166787855]   // bottom-left
         ]
       });
 
@@ -128,6 +130,25 @@
             paint: { 'raster-opacity': 0.75 }
         });
 
+          /* ------------------ WIND COMFORT STABROEK OVERLAY ------------------ */
+      map.addSource('wind-comfort-stabroek-img', {
+        type: 'image',
+        url: 'map_windcomfort_stabroek_web.png',
+        coordinates: [
+          [4.354281665, 51.263371520],  // top-left
+          [4.485654003, 51.263371520],  // top-right
+          [4.485454003, 51.166687855],  // bottom-right
+          [4.354281665, 51.166787855]   // bottom-left
+        ]
+      });
+
+        map.addLayer({
+            id: 'wind-comfort-stabroek-layer',
+            type: 'raster',
+            source: 'wind-comfort-stabroek-img',
+            layout: { visibility: 'none' },  // start hidden
+            paint: { 'raster-opacity': 0.75 }
+        });
       /* ------------------ WIND SPEED OVERLAY ------------------ */
       map.addSource('wind-speed-img', {
         type: 'image',
@@ -135,8 +156,8 @@
         coordinates: [
           [4.354281665, 51.263371520],  // top-left
           [4.485654003, 51.263371520],  // top-right
-          [4.485654003, 51.166687855],  // bottom-right
-          [4.354281665, 51.166687855]   // bottom-left
+          [4.485454003, 51.166687855],  // bottom-right
+          [4.354281665, 51.166787855]   // bottom-left
         ]
       });
 
@@ -147,15 +168,15 @@
         layout: { visibility: 'visible' },  
         paint: { 'raster-opacity': 0.75 }
       });
-            /* ------------------ WIND STORM OVERLAY ------------------ */
+     /* ------------------ WIND STORM OVERLAY ------------------ */
       map.addSource('wind-storm-img', {
         type: 'image',
         url: 'map_windstorm_web.png',
         coordinates: [
           [4.354281665, 51.263371520],  // top-left
           [4.485654003, 51.263371520],  // top-right
-          [4.485654003, 51.166687855],  // bottom-right
-          [4.354281665, 51.166687855]   // bottom-left
+          [4.485454003, 51.166687855],  // bottom-right
+          [4.354281665, 51.166787855]   // bottom-left
         ]
       });
 
@@ -167,6 +188,25 @@
         paint: { 'raster-opacity': 0.75 }
       });
 
+       /* ------------------ WIND HAZARD OVERLAY ------------------ */
+      map.addSource('wind-hazard-img', {
+        type: 'image',
+        url: 'wind_hazard_web.png',
+        coordinates: [
+          [4.354200, 51.263555],  // top-left
+          [4.485451, 51.263385],  // top-right
+          [4.485211, 51.167291],  // bottom-right
+          [4.354080, 51.167341]   // bottom-left
+        ]
+      });
+
+      map.addLayer({
+        id: 'wind-hazard-layer',
+        type: 'raster',
+        source: 'wind-hazard-img',
+        layout: { visibility: 'none' },  
+        paint: { 'raster-opacity': 0.75 }
+      });
                   /* ------------------ TREES OVERLAY ------------------ */
       map.addSource('trees-img', {
         type: 'image',
@@ -210,10 +250,12 @@
 
       /* Put wind overlays above the building extrusions */
       map.moveLayer('wind-comfort-layer', 'bld-v10-3d');
+      map.moveLayer('wind-comfort-stabroek-layer', 'bld-v10-3d');
       map.moveLayer('wind-storm-layer', 'bld-v10-3d');
       map.moveLayer('wind-speed-layer', 'bld-v10-3d');
       map.moveLayer('trees-layer', 'bld-v10-3d');
       map.moveLayer('air-quality-layer', 'bld-v10-3d');
+      map.moveLayer('wind-hazard-layer', 'bld-v10-3d');
 
       /* ------------------ SWITCHING LOGIC ------------------ */
       const selector = document.getElementById("dataset");
@@ -225,52 +267,86 @@
 
         if (value === "comfort") {
           map.setLayoutProperty("wind-comfort-layer", "visibility", "visible");
+          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
           map.setLayoutProperty("wind-speed-layer", "visibility", "none");
           map.setLayoutProperty("wind-storm-layer", "visibility", "none");
           map.setLayoutProperty("trees-layer", "visibility", "none");
           map.setLayoutProperty("air-quality-layer", "visibility", "none");
+          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
 
           legendTitle.innerText = "Wind comfort";
           legendImg.src = "windcomfort_legend.PNG";
         }
 
+        if (value === "comfort-stabroek") {
+          map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
+          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "visible");
+          map.setLayoutProperty("wind-speed-layer", "visibility", "none");
+          map.setLayoutProperty("wind-storm-layer", "visibility", "none");
+          map.setLayoutProperty("trees-layer", "visibility", "none");
+          map.setLayoutProperty("air-quality-layer", "visibility", "none");
+          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
+
+          legendTitle.innerText = "Wind comfort Stabroek";
+          legendImg.src = "windcomfort_legend.PNG";
+        }
         if (value === "storm") {
           map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
+          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
           map.setLayoutProperty("wind-speed-layer", "visibility", "none");
           map.setLayoutProperty("wind-storm-layer", "visibility", "visible");
           map.setLayoutProperty("trees-layer", "visibility", "none");
           map.setLayoutProperty("air-quality-layer", "visibility", "none");
+          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
 
           legendTitle.innerText = "Wind storm";
           legendImg.src = "windstorm_legend.PNG";
         }
         if (value === "trees") {
           map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
+          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
           map.setLayoutProperty("wind-speed-layer", "visibility", "none");
           map.setLayoutProperty("wind-storm-layer", "visibility", "none");
           map.setLayoutProperty("trees-layer", "visibility", "visible");
           map.setLayoutProperty("air-quality-layer", "visibility", "none");
+          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
 
           legendTitle.innerText = "Trees";
           legendImg.src = "trees_legend.png";
         }
         if (value === "quality") {
           map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
+          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
           map.setLayoutProperty("wind-speed-layer", "visibility", "none");
           map.setLayoutProperty("wind-storm-layer", "visibility", "none");
           map.setLayoutProperty("trees-layer", "visibility", "none");
           map.setLayoutProperty("air-quality-layer", "visibility", "visible");
+          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
 
           legendTitle.innerText = "Air quality";
           legendImg.src = "air_quality_legend.png";
         }
 
+        if (value === "hazard") {
+          map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
+          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
+          map.setLayoutProperty("wind-speed-layer", "visibility", "none");
+          map.setLayoutProperty("wind-storm-layer", "visibility", "none");
+          map.setLayoutProperty("trees-layer", "visibility", "none");
+          map.setLayoutProperty("air-quality-layer", "visibility", "none");
+          map.setLayoutProperty("wind-hazard-layer", "visibility", "visible");
+
+          legendTitle.innerText = "Wind hazard";
+          legendImg.src = "wind_hazard_legend.png";
+        }
         if (value === "speed") {
           map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
+          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
           map.setLayoutProperty("wind-speed-layer", "visibility", "visible");
           map.setLayoutProperty("wind-storm-layer", "visibility", "none");
           map.setLayoutProperty("trees-layer", "visibility", "none");
           map.setLayoutProperty("air-quality-layer", "visibility", "none");
+          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
 
           legendTitle.innerText = "Wind speed";
           legendImg.src = "windspeed_legend.PNG";  // <-- update if needed
