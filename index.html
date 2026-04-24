@@ -1,364 +1,871 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wind in Antwerp 3D </title>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wind in Antwerp 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 
-  <link rel="icon" href="data:,">
-
-  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css?v=1" rel="stylesheet" />
   <style>
-    body { margin: 0; padding: 0; }
-    #map { width: 100vw; height: 100vh; }
-
-    /* Dataset selector box */
-    #layer-switch {
-      position: absolute;
-      top: 20px;
-      left: 10px;
-      background: rgba(255, 255, 255, 0.9);
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-family: Arial, sans-serif;
-      z-index: 20;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+    :root {
+      --red:    #e8192c;
+      --dark:   #080d12;
+      --mid:    #0f1923;
+      --card:   #111b26;
+      --border: rgba(255,255,255,0.07);
+      --muted:  rgba(255,255,255,0.35);
+      --text:   rgba(255,255,255,0.88);
     }
 
-    /* Legend box */
-    #legend {
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--dark);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* ── Noise overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.6;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      padding: 0 clamp(24px, 6vw, 80px);
+      overflow: hidden;
+    }
+
+    /* animated wind lines background */
+    .wind-bg {
       position: absolute;
-      bottom: 30px;
-      left: 10px;
-      background: rgba(255, 255, 255, 0.9);
-      padding: 10px 12px;
-      border-radius: 8px;
-      font-family: Arial, sans-serif;
+      inset: 0;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .wind-line {
+      position: absolute;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(232,25,44,0.25), transparent);
+      animation: windFlow linear infinite;
+      transform-origin: left center;
+    }
+
+    @keyframes windFlow {
+      0%   { transform: translateX(-120%) skewY(var(--skew)); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { transform: translateX(120vw) skewY(var(--skew)); opacity: 0; }
+    }
+
+    /* radial glow */
+    .hero-glow {
+      position: absolute;
+      width: 700px;
+      height: 700px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,25,44,0.12) 0%, transparent 70%);
+      top: -200px;
+      right: -150px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: relative;
       z-index: 10;
-      box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 0;
+      border-bottom: 1px solid var(--border);
     }
 
-    #legend h4 {
-      margin: 0 0 8px 0;
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .nav-logo-badge {
+      width: 38px;
+      height: 38px;
+      background: var(--red);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .nav-logo-text {
       font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .nav-logo-text small {
+      display: block;
+      font-size: 10px;
+      font-weight: 300;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--red);
+      color: #fff;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: 8px;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .nav-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+    /* ── HERO CONTENT ── */
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 80px 0 60px;
+      max-width: 720px;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 24px;
+    }
+
+    .hero-eyebrow::before {
+      content: '';
+      display: inline-block;
+      width: 28px;
+      height: 1px;
+      background: var(--red);
+    }
+
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(64px, 10vw, 128px);
+      line-height: 0.92;
+      color: #fff;
+      letter-spacing: 0.01em;
+      margin-bottom: 32px;
+    }
+
+    h1 .accent { color: var(--red); }
+
+    .hero-desc {
+      font-size: clamp(15px, 1.8vw, 18px);
+      font-weight: 300;
+      line-height: 1.75;
+      color: rgba(255,255,255,0.55);
+      max-width: 540px;
+      margin-bottom: 44px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--red);
+      color: #fff;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 500;
+      padding: 14px 28px;
+      border-radius: 10px;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 0 0 0 rgba(232,25,44,0.4);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(232,25,44,0.35);
+    }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 14px 4px;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .btn-ghost:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
+
+    /* ── HERO STATS BAR ── */
+    .hero-stats {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      gap: 0;
+      border-top: 1px solid var(--border);
+      padding: 28px 0;
+    }
+
+    .stat {
+      flex: 1;
+      padding: 0 32px 0 0;
+      border-right: 1px solid var(--border);
+    }
+
+    .stat:last-child { border-right: none; padding-right: 0; padding-left: 32px; }
+    .stat:first-child { padding-left: 0; }
+
+    .stat-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      color: #fff;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-num span { color: var(--red); }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 300;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── PREVIEW FRAME ── */
+    .preview-section {
+      position: relative;
+      z-index: 1;
+      padding: clamp(60px, 8vw, 120px) clamp(24px, 6vw, 80px);
+      background: linear-gradient(180deg, var(--dark) 0%, var(--mid) 100%);
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      max-width: 48px;
+      height: 1px;
+      background: var(--red);
+    }
+
+    .preview-frame {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+      aspect-ratio: 16/9;
+      background: var(--card);
+      cursor: pointer;
+    }
+
+    .preview-frame iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      pointer-events: none;
+    }
+
+    .preview-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8,13,18,0.65);
+      backdrop-filter: blur(2px);
+      transition: opacity 0.3s;
+      text-decoration: none;
+    }
+
+    .preview-frame:hover .preview-overlay { opacity: 0; }
+
+    .play-btn {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: var(--red);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      box-shadow: 0 0 40px rgba(232,25,44,0.5);
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(232,25,44,0.5); }
+      50%       { box-shadow: 0 0 0 18px rgba(232,25,44,0); }
+    }
+
+    .play-btn svg { margin-left: 4px; }
+
+    .preview-overlay p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 0.05em;
+    }
+
+    /* map placeholder when iframe not available */
+    .map-placeholder {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #0a1520 0%, #0f2030 40%, #081018 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .map-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(232,25,44,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232,25,44,0.05) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    .map-buildings {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .bld {
+      background: linear-gradient(180deg, #2a3d52, #1a2d3d);
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .wind-particles {
+      position: absolute;
+      inset: 0;
+    }
+
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      animation: float linear infinite;
+    }
+
+    @keyframes float {
+      0%   { transform: translateX(0) translateY(0); opacity: 0; }
+      10%  { opacity: 1; }
+      90%  { opacity: 0.7; }
+      100% { transform: translateX(var(--dx)) translateY(var(--dy)); opacity: 0; }
+    }
+
+    /* ── FEATURES ── */
+    .features-section {
+      position: relative;
+      z-index: 1;
+      padding: clamp(60px, 8vw, 100px) clamp(24px, 6vw, 80px);
+      background: var(--mid);
+    }
+
+    .features-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 56px;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+
+    .features-header h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(40px, 5vw, 64px);
+      color: #fff;
+      line-height: 1;
+    }
+
+    .features-header p {
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 280px;
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 2px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .feature-card {
+      background: var(--card);
+      padding: 36px 32px;
+      transition: background 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--red);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s;
+    }
+
+    .feature-card:hover::before { transform: scaleX(1); }
+    .feature-card:hover { background: #152030; }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: rgba(232,25,44,0.1);
+      border: 1px solid rgba(232,25,44,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 20px;
+    }
+
+    .feature-card h3 {
+      font-size: 16px;
+      font-weight: 500;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.75;
+      font-weight: 300;
+    }
+
+    .feature-tag {
+      display: inline-block;
+      margin-top: 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--red);
+      opacity: 0.7;
+    }
+
+    /* ── CTA SECTION ── */
+    .cta-section {
+      position: relative;
+      z-index: 1;
+      padding: clamp(80px, 10vw, 140px) clamp(24px, 6vw, 80px);
+      background: var(--dark);
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .cta-glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(232,25,44,0.1) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .cta-section h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 7vw, 96px);
+      color: #fff;
+      line-height: 0.95;
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-section p {
+      font-size: 16px;
+      color: var(--muted);
+      max-width: 440px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+      font-weight: 300;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cta-section .btn-primary {
+      font-size: 16px;
+      padding: 16px 36px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 28px clamp(24px, 6vw, 80px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    footer p {
+      font-size: 12px;
+      color: rgba(255,255,255,0.2);
+    }
+
+    footer a {
+      font-size: 12px;
+      color: rgba(255,255,255,0.2);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    footer a:hover { color: var(--red); }
+
+    /* ── ANIMATIONS on load ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      animation: revealUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes revealUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .d1 { animation-delay: 0.1s; }
+    .d2 { animation-delay: 0.22s; }
+    .d3 { animation-delay: 0.34s; }
+    .d4 { animation-delay: 0.46s; }
+    .d5 { animation-delay: 0.58s; }
+
+    @media (max-width: 600px) {
+      .hero-stats { flex-direction: column; gap: 20px; }
+      .stat { border-right: none; border-bottom: 1px solid var(--border); padding: 0 0 20px; }
+      .stat:last-child { border-bottom: none; padding: 0; }
+      .stat:first-child { padding-left: 0; }
+      .features-header { flex-direction: column; }
+      footer { flex-direction: column; text-align: center; }
     }
   </style>
 </head>
-
 <body>
 
-  <!-- Dataset selector -->
-  <div id="layer-switch">
-    <label for="dataset"><b>Dataset:</b></label>
-    <select id="dataset">
-    <option value="speed" selected>Mean Wind Speed</option>
-    <option value="comfort">Wind Comfort Deurne</option>
-    <option value="comfort-stabroek">Wind Comfort Stabroek</option>
-    <option value="hazard">Wind Hazard</option>
-    <option value="storm">Wind Storm</option>
-    <option value="quality">Air quality</option>
-    <option value="trees">Vegetation</option>
-    </select>
+<!-- ── HERO ── -->
+<section class="hero">
+
+  <!-- Animated wind lines -->
+  <div class="wind-bg" id="windBg"></div>
+  <div class="hero-glow"></div>
+
+  <!-- Nav -->
+  <nav class="reveal d1">
+    <a href="https://windantwerpen.robermamani.com/" class="nav-logo">
+      <div class="nav-logo-badge">A</div>
+      <div class="nav-logo-text">
+        Wind in Antwerp 3D
+        <small>City of Antwerp</small>
+      </div>
+    </a>
+    <a href="https://windantwerpen.robermamani.com/" class="nav-cta" target="_blank">
+      Open Platform →
+    </a>
+  </nav>
+
+  <!-- Hero text -->
+  <div class="hero-content">
+    <div class="hero-eyebrow reveal d2">Urban Wind Analysis</div>
+    <h1 class="reveal d3">
+      WIND<br/>
+      IN<br/>
+      <span class="accent">ANTWERP</span>
+    </h1>
+    <p class="hero-desc reveal d4">
+      A 3D interactive platform visualizing wind speeds, comfort levels, air quality
+      and urban vegetation across the city of Antwerp — built for researchers, planners and city officials.
+    </p>
+    <div class="hero-actions reveal d5">
+      <a href="https://windantwerpen.robermamani.com/" class="btn-primary" target="_blank">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Explore the Map
+      </a>
+      <a href="#features" class="btn-ghost">
+        See features ↓
+      </a>
+    </div>
   </div>
 
-  <!-- Legend -->
-  <div id="legend">
-    <h4 id="legend-title">Wind speed</h4>
-    <img id="legend-img" src="windspeed_legend.PNG" style="width:400px; display:block;">
+  <!-- Stats bar -->
+  <div class="hero-stats reveal d5">
+    <div class="stat">
+      <div class="stat-num">7<span>+</span></div>
+      <div class="stat-label">Data layers</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">3<span>D</span></div>
+      <div class="stat-label">Building model</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">Real<span>-</span>time</div>
+      <div class="stat-label">Interactive rendering</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">OTP<span>🔒</span></div>
+      <div class="stat-label">Secured access</div>
+    </div>
   </div>
 
-  <!-- Map -->
-  <div id="map"></div>
+</section>
 
-  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-  <script>
-    mapboxgl.accessToken =
-      'pk.eyJ1Ijoicm9iZXJtIiwiYSI6ImNtazZrdXd5NjBtYmYzZXNoOXB3YmxweWEifQ.OcryZGeruMGRUOaCpAiO5w';
+<!-- ── PREVIEW ── -->
+<section class="preview-section">
+  <div class="section-label">Live Platform</div>
+  <a href="https://windantwerpen.robermamani.com/" class="preview-frame" target="_blank">
 
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/outdoors-v12',
-      center: [4.412743, 51.199949],
-      zoom: 13,
-      pitch: 60,
-      bearing: -5
-    });
+    <!-- Animated map placeholder -->
+    <div class="map-placeholder">
+      <div class="map-grid"></div>
+      <div class="wind-particles" id="particles"></div>
+      <!-- Stylized 3D buildings skyline -->
+      <div class="map-buildings">
+        <div class="bld" style="width:18px;height:80px"></div>
+        <div class="bld" style="width:26px;height:130px"></div>
+        <div class="bld" style="width:14px;height:60px"></div>
+        <div class="bld" style="width:32px;height:180px"></div>
+        <div class="bld" style="width:20px;height:110px"></div>
+        <div class="bld" style="width:16px;height:75px"></div>
+        <div class="bld" style="width:28px;height:155px"></div>
+        <div class="bld" style="width:22px;height:95px"></div>
+        <div class="bld" style="width:40px;height:210px"></div>
+        <div class="bld" style="width:18px;height:88px"></div>
+        <div class="bld" style="width:24px;height:125px"></div>
+        <div class="bld" style="width:30px;height:160px"></div>
+        <div class="bld" style="width:16px;height:70px"></div>
+        <div class="bld" style="width:20px;height:100px"></div>
+        <div class="bld" style="width:34px;height:190px"></div>
+        <div class="bld" style="width:18px;height:82px"></div>
+        <div class="bld" style="width:26px;height:140px"></div>
+        <div class="bld" style="width:14px;height:65px"></div>
+        <div class="bld" style="width:22px;height:115px"></div>
+        <div class="bld" style="width:38px;height:200px"></div>
+      </div>
+      <!-- Wind overlay gradient -->
+      <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(232,25,44,0.08),rgba(0,120,255,0.08),rgba(0,200,100,0.06));pointer-events:none;"></div>
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:2;">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:clamp(32px,6vw,72px);color:rgba(255,255,255,0.06);letter-spacing:0.05em;text-align:center;">ANTWERP<br/>WIND MAP</div>
+      </div>
+    </div>
 
-    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    <div class="preview-overlay">
+      <div class="play-btn">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M8 5l11 7-11 7V5z" fill="#fff"/>
+        </svg>
+      </div>
+      <p>Click to open the platform</p>
+    </div>
 
-    map.on('load', () => {
+  </a>
+</section>
 
-      /* ------------------ 3D BUILDINGS ------------------ */
-      map.addSource('bld-v10', {
-        type: 'geojson',
-        data: 'bld_antwerp_small.geojson'
-      });
+<!-- ── FEATURES ── -->
+<section class="features-section" id="features">
+  <div class="section-label">What's inside</div>
+  <div class="features-header">
+    <h2>Seven layers.<br/>One city.</h2>
+    <p>Switch between datasets to explore how wind, air and vegetation interact across Antwerp's urban fabric.</p>
+  </div>
 
-      map.addLayer({
-        id: 'bld-v10-3d',
-        type: 'fill-extrusion',
-        source: 'bld-v10',
-        paint: {
-          'fill-extrusion-color': '#818589',
-          'fill-extrusion-height': [
-            'coalesce',
-            ['to-number', ['get', 'height']],
-            0
-          ],
-          'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.95
-        }
-      });
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">💨</div>
+      <h3>Mean Wind Speed</h3>
+      <p>Average wind velocities mapped across the city at pedestrian level, color-coded by intensity.</p>
+      <span class="feature-tag">Layer 01</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧍</div>
+      <h3>Wind Comfort — Deurne</h3>
+      <p>Pedestrian comfort analysis based on Lawson criteria, highlighting zones of discomfort and calm.</p>
+      <span class="feature-tag">Layer 02</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏭</div>
+      <h3>Wind Comfort — Stabroek</h3>
+      <p>Port district comfort analysis factoring in industrial-scale wind flows from the harbor area.</p>
+      <span class="feature-tag">Layer 03</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚠️</div>
+      <h3>Wind Hazard</h3>
+      <p>Zones where wind conditions pose a risk to pedestrians, cyclists or urban infrastructure.</p>
+      <span class="feature-tag">Layer 04</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌪️</div>
+      <h3>Wind Storm</h3>
+      <p>Storm scenario simulation showing where gusts concentrate due to building geometry and street canyons.</p>
+      <span class="feature-tag">Layer 05</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌫️</div>
+      <h3>Air Quality</h3>
+      <p>Pollutant dispersion overlaid on the 3D city model, revealing how wind shapes air quality patterns.</p>
+      <span class="feature-tag">Layer 06</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌳</div>
+      <h3>Vegetation</h3>
+      <p>Urban tree and green space coverage, showing how vegetation influences wind buffering across districts.</p>
+      <span class="feature-tag">Layer 07</span>
+    </div>
+  </div>
+</section>
 
-      /* ------------------ WIND COMFORT OVERLAY ------------------ */
-      map.addSource('wind-comfort-img', {
-        type: 'image',
-        url: 'map_windcomfort_web.png',
-        coordinates: [
-          [4.354281665, 51.263371520],  // top-left
-          [4.485654003, 51.263371520],  // top-right
-          [4.485454003, 51.166687855],  // bottom-right
-          [4.354281665, 51.166787855]   // bottom-left
-        ]
-      });
+<!-- ── CTA ── -->
+<section class="cta-section">
+  <div class="cta-glow"></div>
+  <h2>EXPLORE<br/>THE CITY</h2>
+  <p>Request access and start exploring Antwerp's wind environment in full 3D.</p>
+  <a href="https://windantwerpen.robermamani.com/" class="btn-primary" target="_blank">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Open Wind in Antwerp 3D
+  </a>
+</section>
 
-        map.addLayer({
-            id: 'wind-comfort-layer',
-            type: 'raster',
-            source: 'wind-comfort-img',
-            layout: { visibility: 'none' },  // start hidden
-            paint: { 'raster-opacity': 0.75 }
-        });
+<!-- ── FOOTER ── -->
+<footer>
+  <p>© 2025 Wind in Antwerp 3D · City of Antwerp</p>
+  <a href="https://windantwerpen.robermamani.com/" target="_blank">windantwerpen.robermamani.com →</a>
+</footer>
 
-          /* ------------------ WIND COMFORT STABROEK OVERLAY ------------------ */
-      map.addSource('wind-comfort-stabroek-img', {
-        type: 'image',
-        url: 'map_windcomfort_stabroek_web.png',
-        coordinates: [
-          [4.354281665, 51.263371520],  // top-left
-          [4.485654003, 51.263371520],  // top-right
-          [4.485454003, 51.166687855],  // bottom-right
-          [4.354281665, 51.166787855]   // bottom-left
-        ]
-      });
+<script>
+  // ── Animated wind lines ──
+  const bg = document.getElementById('windBg');
+  const lineCount = 18;
 
-        map.addLayer({
-            id: 'wind-comfort-stabroek-layer',
-            type: 'raster',
-            source: 'wind-comfort-stabroek-img',
-            layout: { visibility: 'none' },  // start hidden
-            paint: { 'raster-opacity': 0.75 }
-        });
-      /* ------------------ WIND SPEED OVERLAY ------------------ */
-      map.addSource('wind-speed-img', {
-        type: 'image',
-        url: 'map_windspeed_web.png',
-        coordinates: [
-          [4.354281665, 51.263371520],  // top-left
-          [4.485654003, 51.263371520],  // top-right
-          [4.485454003, 51.166687855],  // bottom-right
-          [4.354281665, 51.166787855]   // bottom-left
-        ]
-      });
+  for (let i = 0; i < lineCount; i++) {
+    const line = document.createElement('div');
+    line.className = 'wind-line';
+    const top    = Math.random() * 100;
+    const width  = 200 + Math.random() * 400;
+    const dur    = 4 + Math.random() * 8;
+    const delay  = Math.random() * -12;
+    const skew   = -2 + Math.random() * 4;
+    const opacity = 0.3 + Math.random() * 0.7;
 
-      map.addLayer({
-        id: 'wind-speed-layer',
-        type: 'raster',
-        source: 'wind-speed-img',
-        layout: { visibility: 'visible' },  
-        paint: { 'raster-opacity': 0.75 }
-      });
-     /* ------------------ WIND STORM OVERLAY ------------------ */
-      map.addSource('wind-storm-img', {
-        type: 'image',
-        url: 'map_windstorm_web.png',
-        coordinates: [
-          [4.354281665, 51.263371520],  // top-left
-          [4.485654003, 51.263371520],  // top-right
-          [4.485454003, 51.166687855],  // bottom-right
-          [4.354281665, 51.166787855]   // bottom-left
-        ]
-      });
+    line.style.cssText = `
+      top: ${top}%;
+      width: ${width}px;
+      animation-duration: ${dur}s;
+      animation-delay: ${delay}s;
+      --skew: ${skew}deg;
+      opacity: ${opacity};
+    `;
+    bg.appendChild(line);
+  }
 
-      map.addLayer({
-        id: 'wind-storm-layer',
-        type: 'raster',
-        source: 'wind-storm-img',
-        layout: { visibility: 'none' },  
-        paint: { 'raster-opacity': 0.75 }
-      });
+  // ── Floating wind particles ──
+  const pContainer = document.getElementById('particles');
+  for (let i = 0; i < 40; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size  = 2 + Math.random() * 4;
+    const x     = Math.random() * 100;
+    const y     = Math.random() * 100;
+    const dur   = 6 + Math.random() * 10;
+    const delay = Math.random() * -14;
+    const dx    = (80 + Math.random() * 200) + 'px';
+    const dy    = (-40 + Math.random() * 80) + 'px';
+    const colors = ['rgba(232,25,44,0.6)', 'rgba(100,180,255,0.5)', 'rgba(100,220,150,0.4)'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
 
-       /* ------------------ WIND HAZARD OVERLAY ------------------ */
-      map.addSource('wind-hazard-img', {
-        type: 'image',
-        url: 'wind_hazard_web.png',
-        coordinates: [
-          [4.354200, 51.263555],  // top-left
-          [4.485451, 51.263385],  // top-right
-          [4.485211, 51.167291],  // bottom-right
-          [4.354080, 51.167341]   // bottom-left
-        ]
-      });
+    p.style.cssText = `
+      width: ${size}px; height: ${size}px;
+      left: ${x}%; top: ${y}%;
+      background: ${color};
+      animation-duration: ${dur}s;
+      animation-delay: ${delay}s;
+      --dx: ${dx}; --dy: ${dy};
+    `;
+    pContainer.appendChild(p);
+  }
+</script>
 
-      map.addLayer({
-        id: 'wind-hazard-layer',
-        type: 'raster',
-        source: 'wind-hazard-img',
-        layout: { visibility: 'none' },  
-        paint: { 'raster-opacity': 0.75 }
-      });
-                  /* ------------------ TREES OVERLAY ------------------ */
-      map.addSource('trees-img', {
-        type: 'image',
-        url: 'tree_layer_web.png',
-        coordinates: [
-          [4.352063665, 51.263730520],  // top-left
-          [4.483436003, 51.263730520],  // top-right
-          [4.483436003, 51.167046855],  // bottom-right
-          [4.352063665, 51.167046855]   // bottom-left
-        ]
-
-       });
-
-       map.addLayer({
-         id: 'trees-layer',
-         type: 'raster',
-         source: 'trees-img',
-         layout: { visibility: 'none' },  
-         paint: { 'raster-opacity': 0.70 }
-       });
-
-      /* ------------------ Air Quality OVERLAY ------------------ */
-      map.addSource('air-quality-img', {
-        type: 'image',
-        url: 'map_airquality_web.png',
-        coordinates: [
-          [4.354470, 51.238062],  // top-left
-          [4.45128, 51.2380],  // top-right
-          [4.4512179, 51.195991],  // bottom-right
-          [4.35448025, 51.19607922]   // bottom-left
-        ]
-      });
-
-      map.addLayer({
-        id: 'air-quality-layer',
-        type: 'raster',
-        source: 'air-quality-img',
-        layout: { visibility: 'none' },  
-        paint: { 'raster-opacity': 0.75 }
-      });
-
-      /* Put wind overlays above the building extrusions */
-      map.moveLayer('wind-comfort-layer', 'bld-v10-3d');
-      map.moveLayer('wind-comfort-stabroek-layer', 'bld-v10-3d');
-      map.moveLayer('wind-storm-layer', 'bld-v10-3d');
-      map.moveLayer('wind-speed-layer', 'bld-v10-3d');
-      map.moveLayer('trees-layer', 'bld-v10-3d');
-      map.moveLayer('air-quality-layer', 'bld-v10-3d');
-      map.moveLayer('wind-hazard-layer', 'bld-v10-3d');
-
-      /* ------------------ SWITCHING LOGIC ------------------ */
-      const selector = document.getElementById("dataset");
-      const legendTitle = document.getElementById("legend-title");
-      const legendImg = document.getElementById("legend-img");
-
-      selector.addEventListener("change", (e) => {
-        const value = e.target.value;
-
-        if (value === "comfort") {
-          map.setLayoutProperty("wind-comfort-layer", "visibility", "visible");
-          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
-          map.setLayoutProperty("wind-speed-layer", "visibility", "none");
-          map.setLayoutProperty("wind-storm-layer", "visibility", "none");
-          map.setLayoutProperty("trees-layer", "visibility", "none");
-          map.setLayoutProperty("air-quality-layer", "visibility", "none");
-          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
-
-          legendTitle.innerText = "Wind comfort";
-          legendImg.src = "windcomfort_legend.PNG";
-        }
-
-        if (value === "comfort-stabroek") {
-          map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
-          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "visible");
-          map.setLayoutProperty("wind-speed-layer", "visibility", "none");
-          map.setLayoutProperty("wind-storm-layer", "visibility", "none");
-          map.setLayoutProperty("trees-layer", "visibility", "none");
-          map.setLayoutProperty("air-quality-layer", "visibility", "none");
-          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
-
-          legendTitle.innerText = "Wind comfort Stabroek";
-          legendImg.src = "windcomfort_legend.PNG";
-        }
-        if (value === "storm") {
-          map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
-          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
-          map.setLayoutProperty("wind-speed-layer", "visibility", "none");
-          map.setLayoutProperty("wind-storm-layer", "visibility", "visible");
-          map.setLayoutProperty("trees-layer", "visibility", "none");
-          map.setLayoutProperty("air-quality-layer", "visibility", "none");
-          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
-
-          legendTitle.innerText = "Wind storm";
-          legendImg.src = "windstorm_legend.PNG";
-        }
-        if (value === "trees") {
-          map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
-          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
-          map.setLayoutProperty("wind-speed-layer", "visibility", "none");
-          map.setLayoutProperty("wind-storm-layer", "visibility", "none");
-          map.setLayoutProperty("trees-layer", "visibility", "visible");
-          map.setLayoutProperty("air-quality-layer", "visibility", "none");
-          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
-
-          legendTitle.innerText = "Vegetation";
-          legendImg.src = "trees_legend_v1.png";
-        }
-        if (value === "quality") {
-          map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
-          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
-          map.setLayoutProperty("wind-speed-layer", "visibility", "none");
-          map.setLayoutProperty("wind-storm-layer", "visibility", "none");
-          map.setLayoutProperty("trees-layer", "visibility", "none");
-          map.setLayoutProperty("air-quality-layer", "visibility", "visible");
-          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
-
-          legendTitle.innerText = "Air quality";
-          legendImg.src = "air_quality_legend.png";
-        }
-
-        if (value === "hazard") {
-          map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
-          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
-          map.setLayoutProperty("wind-speed-layer", "visibility", "none");
-          map.setLayoutProperty("wind-storm-layer", "visibility", "none");
-          map.setLayoutProperty("trees-layer", "visibility", "none");
-          map.setLayoutProperty("air-quality-layer", "visibility", "none");
-          map.setLayoutProperty("wind-hazard-layer", "visibility", "visible");
-
-          legendTitle.innerText = "Wind hazard";
-          legendImg.src = "wind_hazard_legend.png";
-        }
-        if (value === "speed") {
-          map.setLayoutProperty("wind-comfort-layer", "visibility", "none");
-          map.setLayoutProperty("wind-comfort-stabroek-layer", "visibility", "none");
-          map.setLayoutProperty("wind-speed-layer", "visibility", "visible");
-          map.setLayoutProperty("wind-storm-layer", "visibility", "none");
-          map.setLayoutProperty("trees-layer", "visibility", "none");
-          map.setLayoutProperty("air-quality-layer", "visibility", "none");
-          map.setLayoutProperty("wind-hazard-layer", "visibility", "none");
-
-          legendTitle.innerText = "Wind speed";
-          legendImg.src = "windspeed_legend.PNG";  // <-- update if needed
-        }
-      });
-
-      /* Debug click on buildings */
-      map.on('click', 'bld-v10-3d', (e) => {
-        console.log('Building properties:', e.features[0].properties);
-      });
-
-    });
-  </script>
 </body>
 </html>
