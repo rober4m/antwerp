@@ -2,7 +2,8 @@
 
 A secure, interactive 3D platform for visualizing wind conditions, air quality, and urban vegetation across the city of Antwerp. Built for researchers, urban planners, and city officials.
 
-🔗 **[windantwerpen.robermamani.com](https://windantwerpen.robermamani.com/)**
+🔗 **[windantwerpen.robermamani.com](https://windantwerpen.robermamani.com/)** 
+🔗 **[Wind in Antwerp](https://rober4m.github.io/antwerp/)**
 
 ---
 
