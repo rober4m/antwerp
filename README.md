@@ -8,7 +8,7 @@ A secure, interactive 3D platform for visualizing wind conditions, air quality, 
 
 ## What it does
 
-Wind in Antwerp 3D overlays multiple environmental datasets on a fully interactive 3D model of the city of Antwerp. Users can switch between layers to explore how wind, air quality, and vegetation interact across the urban fabric — all rendered in real time on top of a 3D building model.
+Wind in Antwerp 3D overlays multiple environmental datasets on a fully interactive 3D model of the city of Antwerp. Users can switch between layers to explore how wind, air quality, and vegetation interact across the urban environment — all rendered in real time on top of a 3D building model.
 
 ---
 
@@ -17,8 +17,8 @@ Wind in Antwerp 3D overlays multiple environmental datasets on a fully interacti
 | Layer | Description |
 |---|---|
 | 💨 **Mean Wind Speed** | Average wind velocities at pedestrian level across the city |
-| 🧍 **Wind Comfort — Deurne** | Pedestrian comfort analysis based on Lawson criteria |
-| 🏭 **Wind Comfort — Stabroek** | Port district comfort analysis including harbor wind flows |
+| 🧍 **Wind Comfort — Deurne** | Pedestrian comfort analysis based on data from the Airport |git a
+| 🏭 **Wind Comfort — Stabroek** | Pedestrian comfort analysis based on data from Stabroek station |
 | ⚠️ **Wind Hazard** | Zones where wind poses a risk to pedestrians or infrastructure |
 | 🌪️ **Wind Storm** | Storm scenario simulation showing gust concentration areas |
 | 🌫️ **Air Quality** | Pollutant dispersion patterns shaped by wind and building geometry |
